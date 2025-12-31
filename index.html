@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Image Host</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 50px; background: #f4f4f9; }
+        #drop-zone { width: 400px; height: 200px; border: 2px dashed #007bff; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: white; cursor: pointer; }
+        #status { margin-top: 20px; color: #555; }
+        input { margin: 10px 0; padding: 8px; width: 300px; }
+        .result { margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h2>🚀 GitHub Image Uploader</h2>
+    <input type="password" id="token" placeholder="Paste New GitHub Token Here">
+    <input type="text" id="repo" placeholder="username/repo-name">
+    
+    <div id="drop-zone">Drag & Drop Image Here</div>
+    <div id="status"></div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        
+        dropZone.onclick = () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.onchange = e => upload(e.target.files[0]);
+            fileInput.click();
+        };
+
+        async function upload(file) {
+            const token = document.getElementById('token').value;
+            const repo = document.getElementById('repo').value;
+            const status = document.getElementById('status');
+
+            if(!token || !repo) return alert("Please enter Token and Repo path");
+
+            status.innerText = "Uploading...";
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const content = reader.result.split(',')[1];
+                const fileName = Date.now() + '-' + file.name;
+                const url = `https://api.github.com/repos/${repo}/contents/uploads/${fileName}`;
+
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: "Upload image", content: content })
+                });
+
+                if(response.ok) {
+                    const cdnUrl = `https://cdn.jsdelivr.net/gh/${repo}@main/uploads/${fileName}`;
+                    status.innerHTML = `<div class="result"><strong>Success! URL:</strong><br>${cdnUrl}</div>`;
+                } else {
+                    status.innerText = "Upload failed. Check console/token.";
+                }
+            };
+        }
+    </script>
+</body>
+</html>
